@@ -28,6 +28,7 @@ client = OpenAI(api_key=secret_key)
 uploaded_file = st.file_uploader(
     "Upload a document (.txt or .md)", type=("txt", "md")
 )
+advanced_model = st.checkbox("Use advanced model")
 
 # choose summary type in sidebar of page
 st.sidebar.header("Summary Options") 
@@ -54,8 +55,12 @@ if uploaded_file:
                 {"role": "user", "content": prompt} ]
 
     # Generate an answer using prompt and the OpenAI API.
+    model = "gpt-5-nano"
+    if advanced_model: 
+        model = "gpt-4o"
+
     stream = client.chat.completions.create(
-        model="gpt-5-nano",
+        model=model,
         messages=messages,
         stream=True,
         temperature=1
