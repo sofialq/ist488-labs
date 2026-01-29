@@ -10,10 +10,10 @@ if 'lab2_key' not in st.session_state:
 st.title("Lab 2")
 st.write(" ")
 
-st.title("📄 Document question answering")
+st.title("📄 Document Summarization")
 st.write(
-    "Upload a document below and ask a question about it – GPT will answer! "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
+    "Upload a document below and GPT will summarize it! "
+    "This app uses a secret key."
 )
 
 # Ask user for their OpenAI API key via `st.text_input`.
@@ -29,30 +29,38 @@ uploaded_file = st.file_uploader(
     "Upload a document (.txt or .md)", type=("txt", "md")
 )
 
-# Ask the user for a question via `st.text_area`.
-question = st.text_area(
-    "Now ask a question about the document!",
-    placeholder="Can you give me a short summary?",
-    disabled=not uploaded_file,
-)
+# choose summary type in sidebar of page
+st.sidebar.header("Summary Options") 
+summary_type = st.sidebar.radio( "How do you want your document summarized?", 
+                                ["100 words", "2 connecting paragraphs", "5 bullet points"] )
 
-if uploaded_file and question:
+if uploaded_file:
 
-    # Process the uploaded file and question.
+    # create prompt 
+    def create_prompt(text: str, summary_type: str) -> str: 
+        if summary_type == "100 words": 
+            return f"Summarize the following document in about 100 words:\n\n{text}" 
+        elif summary_type == "2 paragraphs": 
+            return f"Summarize the following document in 2 connecting paragraphs:\n\n{text}" 
+        elif summary_type == "5 bullet points": 
+            return f"Summarize the following document in 5 bullet points:\n\n{text}" 
+        else: 
+            return f"Summarize the following document:\n\n{text}"
+
+    # Process the uploaded file.
     document = uploaded_file.read().decode()
-    messages = [
-        {
-            "role": "user",
-            "content": f"Here's a document: {document} \n\n---\n\n {question}",
-        }
-    ]
+    prompt = create_prompt(document, summary_type)
+    messages = [ {"role": "system", "content": "You are a helpful assistant."}, 
+                {"role": "user", "content": prompt} ]
 
-    # Generate an answer using the OpenAI API.
+    # Generate an answer using prompt and the OpenAI API.
     stream = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-5-nano",
         messages=messages,
         stream=True,
+        temperature=1
     )
 
     # Stream the response to the app using `st.write_stream`.
+    st.write(f"Summarizing your document in {summary_type}")
     st.write_stream(stream)
