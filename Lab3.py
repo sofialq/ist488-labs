@@ -27,7 +27,67 @@ if 'client' not in st.session_state:
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = \
-    [{"role": "assistant", "content": "How can I help you?"}]
+    [{"role": "system", "content": "You are a helpful assistant."},
+      {"role": "assistant", "content": "How can I help you?"}]
+
+if "more_info" not in st.session_state:
+    st.session_state.more_info = False
+
+if prompt := st.chat_input("What is up?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    if st.session_state.more_info:
+        lower = prompt.lower().strip()
+
+        if lower == "yes":
+            system_msg = st.session_state.messages[0] 
+            conversation = st.session_state.messages[1:] 
+            buffer = conversation[-4:] # keep last two messages from user
+            messages = [system_msg] + buffer # implement conversation buffer
+
+            client = st.session_state.client
+            stream = client.chat.completions.create(
+                model = model,
+                messages = messages, 
+                stream = True
+            )
+            with st.chat_message("assistant"): 
+                more_info = st.write_stream(stream)
+
+            more_info_answer = more_info + "Here is more information explained in a simple way. Do you want more info?"
+            st.session_state.messages.append({"role": "assistant", "content": more_info})
+
+        elif lower == "no":
+            reply = "what else can I help you with?"
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+            st.session_state.more_info = False
+        else: 
+            reply = "Please reply with Yes or No." 
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+
+    else:
+        system_msg = st.session_state.messages[0] 
+        conversation = st.session_state.messages[1:] 
+        buffer = conversation[-4:] # keep last two messages from user
+        messages = [system_msg] + buffer # implement conversation buffer
+
+        client = st.session_state.client
+        stream = client.chat.completions.create(
+            model = model,
+            messages = messages, 
+            stream = True
+        )
+
+        with st.chat_message("assistant"):
+            response = st.write_stream(stream)
+
+        final_response = response + "\nDo you want more info?"
+
+        st.session_state.messages.append({"role": "assistant", "content": final_response})
+
+        st.session_state.more_info = True
 
 for msg in st.session_state.messages:
     #st.chat_message(msg["role"]).write(msg["content"])
@@ -35,25 +95,5 @@ for msg in st.session_state.messages:
     #   st.write(msg["content"])
     chat_msg = st.chat_message(msg["role"])
     chat_msg.write(msg["content"])
-
-if prompt := st.chat_input("What is up?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    messages = st.session_state.messages[-4:] # implement conversation buffer
-
-    client = st.session_state.client
-    stream = client.chat.completions.create(
-        model = model,
-        messages = st.session_state.messages[-4:], 
-        stream = True
-    )
-
-    with st.chat_message("assistant"):
-        response = st.write_stream(stream)
-
-    st.session_state.messages.append({"role": "assistant", "content": response})
-
 
 
