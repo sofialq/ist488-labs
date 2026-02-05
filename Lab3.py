@@ -27,7 +27,8 @@ if 'client' not in st.session_state:
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = \
-    [{"role": "system", "content": "You are a helpful assistant."},
+    [{"role": "system", "content": "You are a helpful assistant. "
+    "Always explain things in a simple way a 10-year-old can understand"},
       {"role": "assistant", "content": "How can I help you?"}]
 
 if "more_info" not in st.session_state:
@@ -56,8 +57,8 @@ if prompt := st.chat_input("What is up?"):
             with st.chat_message("assistant"): 
                 more_info = st.write_stream(stream)
 
-            more_info_answer = more_info + "Here is more information explained in a simple way. Do you want more info?"
-            st.session_state.messages.append({"role": "assistant", "content": more_info})
+            more_info_answer = more_info + "\n\nDo you want more info?"
+            st.session_state.messages.append({"role": "assistant", "content": more_info_answer})
 
         elif lower == "no":
             reply = "what else can I help you with?"
@@ -83,7 +84,7 @@ if prompt := st.chat_input("What is up?"):
         with st.chat_message("assistant"):
             response = st.write_stream(stream)
 
-        final_response = response + "\nDo you want more info?"
+        final_response = response + "\n\nDo you want more info?"
 
         st.session_state.messages.append({"role": "assistant", "content": final_response})
 
