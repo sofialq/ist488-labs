@@ -45,8 +45,24 @@ if prompt := st.chat_input("What is up?"):
         if lower == "yes":
             system_msg = st.session_state.messages[0] 
             conversation = st.session_state.messages[1:] 
-            buffer = conversation[-4:] # keep last two messages from user
-            messages = [system_msg] + buffer # implement conversation buffer
+            #buffer = conversation[-4:] # conversation buffer
+            
+            max_tokens = 5000
+            system_tokens = len(system_msg["content"].split())
+
+            buffer = [] # tokens buffer
+            tokens_count = system_tokens
+
+            for msg in reversed(conversation):
+                msg_tokens = len(msg["content"].split())
+
+                if tokens_count + msg_tokens > max_tokens:
+                    break
+
+                buffer.insert(0, msg)
+                tokens_count += msg_tokens
+            
+            messages = [system_msg] + buffer 
 
             client = st.session_state.client
             stream = client.chat.completions.create(
@@ -71,8 +87,24 @@ if prompt := st.chat_input("What is up?"):
     else:
         system_msg = st.session_state.messages[0] 
         conversation = st.session_state.messages[1:] 
-        buffer = conversation[-4:] # keep last two messages from user
-        messages = [system_msg] + buffer # implement conversation buffer
+        # buffer = conversation[-4:] # conversation buffer
+
+        max_tokens = 5000
+        system_tokens = len(system_msg["content"].split())
+
+        buffer = [] # tokens buffer
+        tokens_count = system_tokens
+
+        for msg in reversed(conversation):
+            msg_tokens = len(msg["content"].split())
+
+            if tokens_count + msg_tokens > max_tokens:
+                break
+
+            buffer.insert(0, msg)
+            tokens_count += msg_tokens
+
+        messages = [system_msg] + buffer # implement buffer
 
         client = st.session_state.client
         stream = client.chat.completions.create(
