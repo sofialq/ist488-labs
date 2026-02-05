@@ -40,10 +40,13 @@ if prompt := st.chat_input("What is up?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
+
+    messages = st.session_state.messages[-4:] # implement conversation buffer
+
     client = st.session_state.client
     stream = client.chat.completions.create(
         model = model,
-        messages = st.session_state.messages,
+        messages = st.session_state.messages[-4:], 
         stream = True
     )
 
