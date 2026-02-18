@@ -40,7 +40,7 @@ def get_current_weather(location, api_key, units='imperial'):
         'humidity': humidity
     }
 
-syracuse_weather = get_current_weather('Syracuse, NY, US', api_key)
+syracuse_weather = get_current_weather('Lima, Peru', api_key)
 st.write(f"Current weather in {syracuse_weather['location']}:")
 st.write(f"Temperature: {syracuse_weather['temperature']} °F")
 st.write(f"Feels like: {syracuse_weather['feels_like']} °F")
