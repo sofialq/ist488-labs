@@ -92,7 +92,7 @@ def chat_completion_request(messages, tools=None, tool_choice=None, model="gpt-4
 st.title("Lab 5")
 st.write(" ")
 st.title("'What to Wear' Bot")
-st.write("Input a city name and the bot will output a suggestion on what you should wear there!")
+st.write("Input a city name and the bot will output a suggestion on what you should wear and do there!")
 
 # get user input for location.
 location = st.text_input("Enter a location (City, State, Country): ", value = "Syracuse, NY, US")
