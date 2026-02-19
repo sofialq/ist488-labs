@@ -101,10 +101,14 @@ location = st.text_input("Enter a location (City, State, Country): ", value = "S
 messages = []
 messages.append({"role": "system", 
                  "content": "Don't make assumptions about what values to plug into functions. "
+                 "Always use Fahrenheit for temperature. "
+                 "When reporting weather, always include the current temperature, feels like, "
+                 "temperature minimum, temperature maximum, and humidity in your response. "
                  "Ask for clarification if a user request is ambiguous."})
-messages.append({"role": "user", "content": f"What is the weather like in {location} today?"})
+messages.append({"role": "user", "content": f"What is the weather like in {location} today? Use Farenheit for temperature"})
 chat_response = chat_completion_request(messages, tools=tools)
 
+# call the tool and use information in the response to the user.
 if location:
     chat_response = chat_completion_request(messages, tools=tools)
     assistant_message = chat_response.choices[0].message
@@ -113,7 +117,7 @@ if location:
         tool_call = assistant_message.tool_calls[0]
         args = json.loads(tool_call.function.arguments)
 
-        units = 'imperial' if args['format'] == 'fahrenheit' else 'metric'
+        units = 'imperial'
         weather_info = get_current_weather(args['location'], api_key, units)
 
         messages.append(assistant_message)
@@ -124,6 +128,20 @@ if location:
         })
 
         final_response = chat_completion_request(messages)
-        st.write(final_response.choices[0].message.content)
+        weather_summary = final_response.choices[0].message.content
+
+        suggestion_messages = [ 
+            {"role": "system", "content": "You are a helpful assistant that gives clothing and activity suggestions based on the weather."},
+            {"role": "user", "content": f"The current weather in {location} is: {weather_summary}. What should I wear today and what're some outdoor activities I can do?"}
+        ]
+
+        suggestion_response = chat_completion_request(suggestion_messages)
+        suggestion = suggestion_response.choices[0].message.content
+
+        
+        st.subheader(f"Weather in {location}:")
+        st.write(weather_summary)
+        st.subheader("Clothing and Activity Suggestions:")
+        st.write(suggestion)
 
 
