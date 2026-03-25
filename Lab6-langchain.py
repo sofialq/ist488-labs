@@ -15,4 +15,47 @@ llm = init_chat_model(
 st.title("Lab 6 with LangChain")
 st.write(" ")
 st.title("Movie Recommendation Chatbot")
-st.write("Get movie recommendations and learn about the suggested options!")
+st.write("Get movie recommendations based on genre and mood preferences and learn about the suggested options!")
+
+# sidebar
+st.sidebar.header("Your Movie Preferences:")
+genre = st.sidebar.selectbox(
+    'Preferred movie genre', 
+    ('Action', 'Comedy', 'Horror', 'Drama', 'Sci-Fi', 'Thriller', 'Romance')
+)
+mood = st.sidebar.selectbox(
+    'What mood are you in/want to be in?',
+    ('Excited', 'Happy', 'Sad', 'Bored', 'Scared', 'Romantic', 'Curious', 'Tense', 'Melancholy')
+)
+persona = st.sidebar.selectbox(
+    'How would you describe yourself?',
+    ('Film Critic', 'Casual Friend', 'Movie Journalist')
+)
+
+# build prompt template and chain
+prompt_template = f"""You are a {persona}
+
+Recommend exactly 3 movies that match these preferences:
+-Genre: {genre}
+-Mood: {mood}
+
+For each movie provide:
+1. Movie title
+2. one or two notable actors and actresses in the cast
+3. a brief 1-2 sentence description
+4. a brief 1-2 sentence explanation about why it fits the {genre} genre and {mood} mood
+
+Respond in the tone and style of a {persona}
+
+"""
+
+prompt = PromptTemplate(
+    input_variables=["genre", "mood", "persona"],
+    template = prompt_template
+)
+
+chain = prompt | llm
+
+# initialize session state
+if "last_recommnedation" not in st.session_state:
+    st.session_state.last_recommendation = None
