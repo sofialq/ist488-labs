@@ -16,6 +16,8 @@ st.title("Lab 6 with LangChain")
 st.write(" ")
 st.title("Movie Recommendation Chatbot")
 st.write("Get movie recommendations based on genre and mood preferences and learn about the suggested options!")
+st.write("Indicate your preferences in the sidebar and then click the 'Recommend Movies' button")
+st.write(" ")
 
 # sidebar
 st.sidebar.header("Your Movie Preferences:")
@@ -54,8 +56,26 @@ prompt = PromptTemplate(
     template = prompt_template
 )
 
-chain = prompt | llm
+chain = prompt | llm | StrOutputParser()
 
 # initialize session state
 if "last_recommnedation" not in st.session_state:
     st.session_state.last_recommendation = None
+
+# invoke chain
+if st.button("Recommend Movies"):
+    with st.spinner(f"As a {persona}, you are feeling {mood} and want to watch a {genre} movie..."):
+        
+        response = chain.invoke({
+            "genre": genre,
+            "mood": mood,
+            "persona": persona
+        })
+    
+        st.session_state.last_recommendation = response
+
+        st.write(" ")
+        st.write(response)
+
+
+
