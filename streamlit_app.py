@@ -8,8 +8,9 @@ lab4_page = st.Page('Lab4.py', title = "Lab 4")
 lab5_page = st.Page('Lab5.py', title = "Lab 5")
 responses_page = st.Page('Lab6-responses.py', title = "Lab 6- OpenAI Responses")
 langchain_page = st.Page('Lab6-langchain.py', title = "Lab 6- LangChain")
+localmodel_page = st.Page('Lab7-LocalModel.py', title = "Lab 7- Local Model")
 
-pg = st.navigation([langchain_page, responses_page, lab5_page, lab4_page, 
-                    lab3_page, lab2_page, lab1_page]) # default to lab 6.2
+pg = st.navigation([localmodel_page, langchain_page, responses_page, lab5_page, lab4_page, 
+                    lab3_page, lab2_page, lab1_page]) # default to lab 7
 st.set_page_config(page_title = 'IST 488 Labs')
 pg.run()
