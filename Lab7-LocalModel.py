@@ -49,7 +49,7 @@ if prompt := st.chat_input("Ask a question"):
 
         # detect if web search is needed
         no_web = client.chat(
-            model='ministral-3:3b',
+            model='qwen3.5:4b',
             messages=messages,
             tools=tools
         )
@@ -70,7 +70,7 @@ if prompt := st.chat_input("Ask a question"):
 
         # generate final response with search context
         stream = client.chat(
-            model='ministral-3:3b',
+            model='qwen3.5:4b',
             messages=messages,  
             stream=True,
         )
