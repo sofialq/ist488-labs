@@ -1,11 +1,9 @@
 import ollama
 import streamlit as st
 from ollama import chat
+from ollama import web_search
 
-# define tool schema 
-import ollama
-
-# Step 1: Define the tool schema (like Lab 5's get_current_weather tool)
+# define the tool schema 
 tools = [
     {
         "type": "function",
@@ -28,7 +26,8 @@ tools = [
 
 # create client
 client = ollama.Client(
-    api_key=st.secrets["OLLAMA_API_KEY"]
+    host="https://api.ollama.com",
+    headers={"Authorization": f"Bearer {st.secrets['OLLAMA_API_KEY']}"}
 )
 
 # initialize session state
@@ -41,36 +40,48 @@ for message in st.session_state.messages:
 
 # chatbot
 if prompt := st.chat_input("Ask a question"):
-    st.write(f"you said: {prompt}")
-    
+    with st.chat_message("user"):
+        st.write(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
     try:
+        messages = [{"role": "user", "content": prompt}]
+
+        # detect if web search is needed
         no_web = client.chat(
-            model='mistral:latest',
-            messages=[{"role": "user", "content": prompt}],
+            model='qwen3:4b',
+            messages=messages,
             tools=tools
         )
 
-        messages=[{"role": "user", "content": prompt}]
+        # append assistant's response (including any tool calls)
+        messages.append(no_web.message)
 
         if no_web.message.tool_calls:
             for tool_call in no_web.message.tool_calls:
                 query = tool_call.function.arguments['query']
 
-                web_search = ollama.web_search(prompt)
+                # ollama web search
+                search_results = web_search(query)
+                results_text = "\n".join(
+                    f"{r.title}: {r.content}" for r in search_results.results
+                )
+                messages.append({"role": "tool", "content": results_text})
 
-                messages.append({"role": "tool", "content": str(web_search)})
-
+        # generate final response with search context
         stream = client.chat(
-            model='mistral:latest',
-            messages=[{"role": "user", "content": prompt}],
+            model='qwen3:4b',
+            messages=messages,  
             stream=True,
         )
 
-        # stream response and save to session state
         with st.chat_message("assistant"):
             def stream_response():
                 for chunk in stream:
                     yield chunk.message.content
             full_response = st.write_stream(stream_response())
+
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
+
     except Exception as e:
         st.error(f"Error: {e}")
