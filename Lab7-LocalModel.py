@@ -26,7 +26,7 @@ tools = [
 
 # create client
 client = ollama.Client(
-    host="https://api.ollama.com",
+    host="https://ollama.com",
     headers={"Authorization": f"Bearer {st.secrets['OLLAMA_API_KEY']}"}
 )
 
