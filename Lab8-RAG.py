@@ -15,8 +15,8 @@ st.title("Lab 8")
 st.write(" ")
 st.title("Retrieval vs Reranking in RAG")
 st.write("Compare how reranking improves answer accuracy over retrieval alone for the query. " \
-"The docments and queryare provided in the code. ")
-st.write("--------------------------------------------------")
+"The docments and query are provided in the code. ")
+st.write("------------------------")
 st.write(f"docs: {docs}")
 st.write(f"query: {query}")
 st.write(" ")
@@ -26,6 +26,7 @@ st.divider()
 # retrieval 
 st.subheader("Retrieval")
 st.write("score based on word matching between query and document")
+st.write(" ")
 
 def retrieval_score(query, doc):
     query_words = set(query.lower().split())
@@ -39,12 +40,14 @@ top3 = scored_docs[:3]
 for rank, (doc, score) in enumerate(top3, 1):
     st.write(f"\nRank {rank} | Retrieval Score: {score}")
     st.write(f"  \"{doc}\"")
+    st.write(" ")
 
 st.divider()
 
 # reranking
 st.subheader("Reranking")
 st.write("score based on relevance to query")
+st.write(" ")
 
 def rerank_score(doc, score = 0):
     if "midterm" in doc.lower():
