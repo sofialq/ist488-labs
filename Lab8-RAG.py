@@ -14,7 +14,11 @@ query = "When is the midterm?"
 st.title("Lab 8")
 st.write(" ")
 st.title("Retrieval vs Reranking in RAG")
-st.write(f"Compare how reranking improves answer accuracy over retrieval alone for the query '{query}.'")
+st.write("Compare how reranking improves answer accuracy over retrieval alone for the query. " \
+"The docments and queryare provided in the code. ")
+st.write("--------------------------------------------------")
+st.write(f"docs: {docs}")
+st.write(f"query: {query}")
 st.write(" ")
 
 st.divider()
