@@ -14,11 +14,10 @@ query = "When is the midterm?"
 st.title("Lab 8")
 st.write(" ")
 st.title("Retrieval vs Reranking in RAG")
-st.write("Compare how reranking improves answer accuracy over retrieval alone.")
+st.write(f"Compare how reranking improves answer accuracy over retrieval alone for the query '{query}.'")
 st.write(" ")
 
-st.subheader("Query")
-st.write(f"\"{query}\"")
+st.divider()
 
 # retrieval 
 st.subheader("Retrieval")
@@ -36,6 +35,8 @@ top3 = scored_docs[:3]
 for rank, (doc, score) in enumerate(top3, 1):
     st.write(f"\nRank {rank} | Retrieval Score: {score}")
     st.write(f"  \"{doc}\"")
+
+st.divider()
 
 # reranking
 st.subheader("Reranking")
@@ -56,6 +57,8 @@ reranked.sort(key=lambda x: x[1], reverse=True)
 for rank, (doc, score) in enumerate(reranked, 1):
     st.write(f"\nRank {rank} | Reranking Score: {score}")
     st.write(f"  \"{doc}\"")
+
+st.divider()
 
 # final answer
 best_doc = reranked[0][0]
