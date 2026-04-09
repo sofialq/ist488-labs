@@ -17,6 +17,9 @@ st.title("Retrieval vs Reranking in RAG")
 st.write("Compare how reranking improves answer accuracy over retrieval alone.")
 st.write(" ")
 
+st.subheader("Query")
+st.write(f"\"{query}\"")
+
 # retrieval 
 st.subheader("Retrieval")
 
