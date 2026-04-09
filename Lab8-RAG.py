@@ -22,6 +22,7 @@ st.write(f"\"{query}\"")
 
 # retrieval 
 st.subheader("Retrieval")
+st.write("score based on word matching between query and document")
 
 def retrieval_score(query, doc):
     query_words = set(query.lower().split())
@@ -38,6 +39,7 @@ for rank, (doc, score) in enumerate(top3, 1):
 
 # reranking
 st.subheader("Reranking")
+st.write("score based on relevance to query")
 
 def rerank_score(doc, score = 0):
     if "midterm" in doc.lower():
@@ -50,6 +52,10 @@ def rerank_score(doc, score = 0):
 
 reranked = [(doc, rerank_score(doc)) for doc, _ in top3]
 reranked.sort(key=lambda x: x[1], reverse=True)
+
+for rank, (doc, score) in enumerate(reranked, 1):
+    st.write(f"\nRank {rank} | Reranking Score: {score}")
+    st.write(f"  \"{doc}\"")
 
 # final answer
 best_doc = reranked[0][0]
