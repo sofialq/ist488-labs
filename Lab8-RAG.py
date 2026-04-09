@@ -36,7 +36,7 @@ for rank, (doc, score) in enumerate(top3, 1):
 # reranking
 st.subheader("Reranking")
 
-def rerank_score(doc):
+def rerank_score(doc, score = 0):
     if "midterm" in doc.lower():
         score += 2
     if "exam" in doc.lower():
