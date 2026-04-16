@@ -235,8 +235,9 @@ if result:
 
         lines = []
         seen = set()
-        
-        for msg in result["messages"]:
+        messages = result["messages"]
+
+        for i, msg in enumerate(messages):
             msg_name = getattr(msg, "name", None)
             tool_calls = getattr(msg, "tool_calls", None) or []
 
@@ -244,6 +245,6 @@ if result:
                 seen.add(msg_name)
                 lines.append(f"{agent_emojis[msg_name]}  {msg_name}")
                 lines += [f"   ↳ {c['name']}" for c in tool_calls if not c["name"].startswith("transfer_")]
+                lines.append("")  
 
-        st.code("\n".join(lines), language=None)
-
+        st.write("\n".join(lines))
