@@ -236,10 +236,16 @@ with st.sidebar:
             msg_name = getattr(msg, 'name', None) # agent name
             tool_calls = getattr(msg, 'tool_calls', None) # tool invocations
 
+            if tool_calls:
+                for call in tool_calls:
+                    if call["name"].startswith("transfer_"):
+                        continue
+
             if msg_name in agent_emojis:
                 emoji = agent_emojis[msg_name]
                 st.write(f"{emoji} **{msg_name}**")
 
             if tool_calls:
                 for call in tool_calls:
-                    st.write(f"• Tool called: `{call['name']}`")
+                    if not call["name"].startswith("transfer_"):
+                        st.write(f"• Tool called: `{call['name']}`")
