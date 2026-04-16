@@ -231,20 +231,21 @@ if result:
             "Supervisor": "🧠"
         }
 
-        st.write("Execution Order:")
-
         lines = []
         seen = set()
         messages = result["messages"]
 
         for i, msg in enumerate(messages):
             msg_name = getattr(msg, "name", None)
-            tool_calls = getattr(msg, "tool_calls", None) or []
 
             if msg_name in agent_emojis and msg_name not in seen:
                 seen.add(msg_name)
                 lines.append(f"{agent_emojis[msg_name]}  {msg_name}")
-                lines += [f"   ↳ {c['name']}" for c in tool_calls if not c["name"].startswith("transfer_")]
-                lines.append("")  
+
+                if i + 1 < len(messages):
+                    next_tool_calls = getattr(messages[i + 1], "tool_calls", None) or []
+                    lines += [f"   ↳ {c['name']}" for c in next_tool_calls if not c["name"].startswith("transfer_")]
+
+                lines.append("")
 
         st.write("\n".join(lines))
