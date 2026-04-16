@@ -222,7 +222,7 @@ result = st.session_state.ma_result
 
 if result:
     with st.sidebar:
-        st.subheader("Agent Activity Log")
+        st.subheader("Agent Activity Log:")
 
         agent_emojis = {
             "research_agent": "🔎",
@@ -233,24 +233,16 @@ if result:
 
         st.write("Execution Order:")
 
-        seen = set()
+        st.write("Execution Order:")
 
+        lines = []
         for msg in result["messages"]:
             msg_name = getattr(msg, "name", None)
-            tool_calls = getattr(msg, "tool_calls", None)
-
-            if tool_calls:
-                for call in tool_calls:
-                    if call["name"].startswith("transfer_"):
-                        continue  
+            tool_calls = getattr(msg, "tool_calls", None) or []
 
             if msg_name in agent_emojis:
-                seen.add(msg_name)
-                emoji = agent_emojis[msg_name]
-                st.write(f"{emoji} **{msg_name}**")
+                lines.append(f"{agent_emojis[msg_name]}  {msg_name}")
+                lines += [f"   ↳ {c['name']}" for c in tool_calls if not c["name"].startswith("transfer_")]
 
-                if tool_calls:
-                    for call in tool_calls:
-                        if not call["name"].startswith("transfer_"):
-                            st.write(f"&nbsp;&nbsp;&nbsp;↳ 🛠️ `{call['name']}`")
+        st.code("\n".join(lines), language=None)
 
