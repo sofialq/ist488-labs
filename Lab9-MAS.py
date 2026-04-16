@@ -245,7 +245,7 @@ if result:
                         continue  
 
             if msg_name in agent_emojis:
-                seen.add
+                seen.add(msg_name)
                 emoji = agent_emojis[msg_name]
                 st.write(f"{emoji} **{msg_name}**")
 
