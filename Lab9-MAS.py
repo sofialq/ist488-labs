@@ -233,14 +233,15 @@ if result:
 
         st.write("Execution Order:")
 
-        st.write("Execution Order:")
-
         lines = []
+        seen = set()
+        
         for msg in result["messages"]:
             msg_name = getattr(msg, "name", None)
             tool_calls = getattr(msg, "tool_calls", None) or []
 
-            if msg_name in agent_emojis:
+            if msg_name in agent_emojis and msg_name not in seen:
+                seen.add(msg_name)
                 lines.append(f"{agent_emojis[msg_name]}  {msg_name}")
                 lines += [f"   ↳ {c['name']}" for c in tool_calls if not c["name"].startswith("transfer_")]
 
