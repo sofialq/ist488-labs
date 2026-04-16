@@ -112,7 +112,7 @@ def create_schedule(destination: str, days: int, interests: str) -> str:
 research_agent = create_react_agent(
     model=agent_llm,
     tools=[search_destination],
-    agent_name="research_agent",
+    name="research_agent",
     prompt=("You are a travel research specialist. Your ONLY job is to look up destination information." \
     "Always use the search_destination tool to find information about the destination. " \
     "Do not provide any information that is not from the tool. Always use the tool when asked about the destination." \
@@ -123,7 +123,7 @@ research_agent = create_react_agent(
 budget_agent = create_react_agent(
     model=agent_llm,
     tools=[calculate_budget],
-    agent_name="budget_agent",
+    name="budget_agent",
     prompt=("You are a travel budget specialist. Your ONLY job is to calculate the budget for a trip." \
     "Always use the calculate_budget tool to compute the trip budget based on the destination, duration, and budget level." \
     "Do not provide any information that is not from the tool. Always use the tool when asked about the budget." \
@@ -134,7 +134,7 @@ budget_agent = create_react_agent(
 itinerary_agent = create_react_agent(
     model=agent_llm,
     tools=[create_schedule],
-    agent_name="itinerary_agent",
+    name="itinerary_agent",
     prompt=("You are a travel itinerary specialist. Your ONLY job is to create a daily schedule for a trip." \
     "Always use the create_schedule tool to generate a daily itinerary based on the destination, duration, and interests." \
     "Do not provide any information that is not from the tool. Always use the tool when asked about the itinerary." \
