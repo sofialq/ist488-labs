@@ -107,6 +107,7 @@ def create_schedule(destination: str, days: int, interests: str) -> str:
 # create agents
 research_agent = create_react_agent(
     llm=agent_llm,
+    model='gpt-4o-mini',
     tools=[search_destination],
     agent_name="Research Agent",
     prompt=("You are a travel research specialist. Your ONLY job is to look up destination information." \
@@ -118,6 +119,7 @@ research_agent = create_react_agent(
 
 budget_agent = create_react_agent(
     llm=agent_llm,
+    model='gpt-4o-mini',
     tools=[calculate_budget],
     agent_name="Budget Agent",
     prompt=("You are a travel budget specialist. Your ONLY job is to calculate the budget for a trip." \
@@ -129,6 +131,7 @@ budget_agent = create_react_agent(
 
 itinerary_agent = create_react_agent(
     llm=agent_llm,
+    model='gpt-4o-mini',
     tools=[create_schedule],
     agent_name="Itinerary Agent",
     prompt=("You are a travel itinerary specialist. Your ONLY job is to create a daily schedule for a trip." \
