@@ -9,5 +9,7 @@ protobuf==3.20
 langchain
 langchain-anthropic
 langchain-openai
+langchain-supervisor
+langgraph
 pydantic
 ollama

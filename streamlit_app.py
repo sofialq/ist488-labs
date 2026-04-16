@@ -10,8 +10,9 @@ responses_page = st.Page('Lab6-responses.py', title = "Lab 6- OpenAI Responses")
 langchain_page = st.Page('Lab6-langchain.py', title = "Lab 6- LangChain")
 localmodel_page = st.Page('Lab7-LocalModel.py', title = "Lab 7- Local Model")
 rag_page = st.Page('Lab8-RAG.py', title = "Lab 8- RAG Reranking")
+mas_page = st.Page('Lab9-MAS.py', title = "Lab 9- MAS")
 
-pg = st.navigation([rag_page, localmodel_page, langchain_page, responses_page, lab5_page, lab4_page, 
-                    lab3_page, lab2_page, lab1_page]) # default to lab 8
+pg = st.navigation([mas_page, rag_page, localmodel_page, langchain_page, responses_page, lab5_page, lab4_page, 
+                    lab3_page, lab2_page, lab1_page]) # default to lab 9
 st.set_page_config(page_title = 'IST 488 Labs')
 pg.run()

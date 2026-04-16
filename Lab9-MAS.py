@@ -1,0 +1,245 @@
+import os
+import json
+import streamlit as st
+from langchain_openai import ChatOpenAI
+from langchain_core.tools import tool
+from langgraph.prebuilt import create_react_agent
+from langgraph_supervisor import create_supervisor
+
+# Show title and description.
+st.title("Lab 9")
+st.write(" ")
+st.title("Multi-Agent Trip Planner")
+st.write("A supervisor agent will be used to ochestrate three specialist agents- research, budget, and itinerary- to plan a trip. ")
+st.write(" ")
+
+# openai client
+client = ChatOpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+# openai instances 
+agent_llm = ChatOpenAI(model='gpt-4o-mini', temperature=0)
+supervisor_llm = ChatOpenAI(model='gpt-4o-mini', temperature=0)
+
+# load data
+with open("travel_data.json", 'r') as f:
+    TRAVEL_DATA = json.load(f)
+
+# define tools
+@tool
+def search_destination(query: str) -> str:
+    """Search for information about a travel destination."""
+
+    for city, data in TRAVEL_DATA["destinatons"].items():
+        if query.strip().lower() in city.lower():
+            return json.dumps({
+                "destinations": city,
+                "info": data
+                })
+
+    return json.dumps({"destination": query,
+                       "info": "No information found."})
+
+@tool
+def calculate_budget(destination: str, days: int, budget_level: str) -> str:
+    """Calculate a budget for a trip based on destination, duration, and budget level."""
+
+    if budget_level.strip().lower() not in TRAVEL_DATA["daily_costs"]:
+        return json.dumps({"error": "Invalid budget level."})
+    
+    daily = TRAVEL_DATA["daily_costs"][budget_level.strip().lower()]
+    daily_total = sum(daily.values())
+    total_cost = daily_total * days
+
+    flight_cost = TRAVEL_DATA["flight_estimates"].get(destination.strip().lower(), TRAVEL_DATA["flight_estimates"]["default"])
+    
+    trip_cost = total_cost + flight_cost
+
+    return json.dumps({
+        "destination": destination,
+        "days": days,
+        "budget_level": budget_level,
+        "breakdown": {
+            "daily_costs": daily,
+            "daily_total": daily_total,
+            "total_cost": total_cost,
+            "flight_cost": flight_cost
+        },
+        "trip_cost": trip_cost,
+        "money_saving_tips": TRAVEL_DATA["money_saving_tips"]
+    })
+
+@tool
+def create_schedule(destination: str, days: int, interests: str) -> str:
+    """Create a daily itinerary for a trip based on destination, duration, and interests."""
+
+    interest_list = [i.strip().lower() for i in interests.split(",")]
+
+    activity_pool = []
+    for interest in interest_list:
+        if interest in TRAVEL_DATA["activities"]:
+            activity_pool.extend(TRAVEL_DATA["activities"][interest])
+
+    if not activity_pool:
+        activity_pool = TRAVEL_DATA["activities"]["general"]
+
+    schedule = []
+    slots = ["Morning", "Afternoon", "Evening"]
+    
+    for day in range(1, days + 1):
+        day_plan = {}
+        for slot in slots:
+            index = (day + len(schedule) + len(slot)) % len(activity_pool)
+            day_plan[slot] = activity_pool[index]
+
+        schedule.append({
+            'day': day,
+            'destination': destination,
+            'plan': day_plan
+        })
+
+    return json.dumps({
+        "destination": destination,
+        "days": days,
+        "interests": interest_list,
+        "schedule": schedule
+    })
+
+# create agents
+research_agent = create_react_agent(
+    llm=agent_llm,
+    tools=[search_destination],
+    agent_name="Research Agent",
+    prompt=("You are a travel research specialist. Your ONLY job is to look up destination information." \
+    "Always use the search_destination tool to find information about the destination. " \
+    "Do not provide any information that is not from the tool. Always use the tool when asked about the destination." \
+    "Do not make up any information."
+    )
+)
+
+budget_agent = create_react_agent(
+    llm=agent_llm,
+    tools=[calculate_budget],
+    agent_name="Budget Agent",
+    prompt=("You are a travel budget specialist. Your ONLY job is to calculate the budget for a trip." \
+    "Always use the calculate_budget tool to compute the trip budget based on the destination, duration, and budget level." \
+    "Do not provide any information that is not from the tool. Always use the tool when asked about the budget." \
+    "Do not make up any information."
+    )   
+)
+
+itinerary_agent = create_react_agent(
+    llm=agent_llm,
+    tools=[create_schedule],
+    agent_name="Itinerary Agent",
+    prompt=("You are a travel itinerary specialist. Your ONLY job is to create a daily schedule for a trip." \
+    "Always use the create_schedule tool to generate a daily itinerary based on the destination, duration, and interests." \
+    "Do not provide any information that is not from the tool. Always use the tool when asked about the itinerary." \
+    "Do not make up any information."
+    )   
+)
+
+# create supervisor
+supervisor_prompt = """
+You are the Supervisor Agent responsible for coordinating three specialist agents.
+Your job is to read the user's request, decide which specialist(s) should handle it,
+and then synthesize their outputs into one clear, organized final response.
+
+You have access to the following agents:
+
+1. research_agent — Handles destination information, highlights, culture, weather, and travel tips.
+2. budget_agent — Handles cost estimates, daily expenses, flight estimates, and budget planning.
+3. itinerary_agent — Handles day-by-day schedules and activity planning based on interests.
+
+Routing rules:
+- If the user asks about a destination, send the task to research_agent.
+- If the user asks about costs, prices, or budgeting, send the task to budget_agent.
+- If the user asks about schedules, activities, or itineraries, send the task to itinerary_agent.
+- If the user asks for full trip planning (e.g., “Plan my trip to Tokyo”), call ALL THREE agents.
+
+After receiving the outputs from the selected agents:
+- Combine their results into one cohesive, well-structured response.
+- Do NOT invent information. Only use what the agents return.
+- Present the final answer in a friendly, organized, easy-to-read format.
+"""
+
+workflow = create_supervisor(
+    agents=[research_agent, budget_agent, itinerary_agent],
+    model=supervisor_llm,
+    name="Supervisor",
+    prompt=supervisor_prompt
+)
+
+# streamlit interface
+with st.sidebar:
+    st.header("Trip Details")
+
+    destination = st.text_input("Destination")
+    duration = st.slider("Duration (days)", min_value=1, max_value=30)
+    budget_level = st.selectbox("Budget Level", options=["Low", "Medium", "High"])
+    interests = st.multiselect("Interests", options=["Culture", "Food", "Nature", "Nightlife", "History"])
+
+if 'ma_result' not in st.session_state:
+    st.session_state.ma_result = None
+
+if 'ma_messages' not in st.session_state:
+    st.session_state.ma_messages = None
+
+query = (
+    f"Plan a {duration}-day trip to {destination}. "
+    f"My budget level is {budget_level.lower()}. "
+    f"My interests include: {interests}. "
+    f"Please provide destination research, a budget breakdown, "
+    f"and a day-by-day itinerary."
+)
+
+st.subheader("Your Query")
+st.write(query)
+st.write(" ")
+
+multi_agent_app = workflow.compile()
+result = multi_agent_app.invoke({
+    'messages': [
+        {"role": "user", "content": query}
+    ]
+})
+
+if st.button("Plan My Trip"):
+    with st.spinner("Planning your trip..."):
+        result = multi_agent_app.invoke({
+            "messages": [{"role": "user", "content": query}]
+        })
+
+        st.session_state.ma_result = result
+        st.session_state.ma_messages = result["messages"]
+
+if st.session_state.ma_messages:
+    st.subheader("Your Travel Plan")
+    final_answer = st.session_state.ma_messages[-1].content
+    st.markdown(final_answer)
+
+with st.sidebar:
+    st.subheader("Agent Activity Log")
+
+    agent_emojis = {
+        "Research Agent": "🔎",
+        "Budget Agent": "💰",
+        "Itinerary Agent": "🗺️",
+        "Supervisor": "🧠"
+    }
+
+    result = st.session_state.ma_result
+
+    if result:
+        for msg in result["messages"]:
+            msg_name = getattr(msg, 'name', None) # agent name
+            tool_calls = getattr(msg, 'tool_calls', None) # tool invocations
+
+            st.write("Execution Order:")
+
+            if msg_name in agent_emojis:
+                emoji = agent_emojis[msg_name]
+                st.write(f"{emoji} **{msg_name}**")
+
+            if tool_calls:
+                for call in tool_calls:
+                    st.write(f"• Tool called: `{call['name']}`")
