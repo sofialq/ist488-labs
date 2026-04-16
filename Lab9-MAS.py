@@ -236,6 +236,9 @@ if result:
         messages = result["messages"]
 
         for i, msg in enumerate(messages):
+            st.write(f"[{i}] type={type(msg).__name__} name={getattr(msg, 'name', None)} tool_calls={getattr(msg, 'tool_calls', None)}")
+
+        for i, msg in enumerate(messages):
             msg_name = getattr(msg, "name", None)
 
             if msg_name in agent_emojis and msg_name not in seen:
