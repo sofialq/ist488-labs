@@ -218,34 +218,37 @@ if st.session_state.ma_messages:
     final_answer = st.session_state.ma_messages[-1].content
     st.markdown(final_answer)
 
-with st.sidebar:
-    st.subheader("Agent Activity Log")
+if result:
+    with st.sidebar:
+        st.subheader("Agent Activity Log")
 
-    agent_emojis = {
-        "research_agent": "🔎",
-        "budget_agent": "💰",
-        "itinerary_agent": "🗺️",
-        "Supervisor": "🧠"
-    }
+        agent_emojis = {
+            "research_agent": "🔎",
+            "budget_agent": "💰",
+            "itinerary_agent": "🗺️",
+            "Supervisor": "🧠"
+        }
 
-    result = st.session_state.ma_result
+        result = st.session_state.ma_result
 
-    if result:
-        st.write("Execution Order:")
-        for msg in result["messages"]:
-            msg_name = getattr(msg, 'name', None) # agent name
-            tool_calls = getattr(msg, 'tool_calls', None) # tool invocations
+        if result:
+            st.write("Execution Order:")
 
-            if tool_calls:
-                for call in tool_calls:
-                    if call["name"].startswith("transfer_"):
-                        continue
+            for msg in result["messages"]:
+                msg_name = getattr(msg, "name", None)
+                tool_calls = getattr(msg, "tool_calls", None)
 
-            if msg_name in agent_emojis:
-                emoji = agent_emojis[msg_name]
-                st.write(f"{emoji} **{msg_name}**")
+                if tool_calls:
+                    for call in tool_calls:
+                        if call["name"].startswith("transfer_"):
+                            continue  
 
-            if tool_calls:
-                for call in tool_calls:
-                    if not call["name"].startswith("transfer_"):
-                        st.write(f"• Tool called: `{call['name']}`")
+                if msg_name in agent_emojis:
+                    emoji = agent_emojis[msg_name]
+                    st.write(f"{emoji} **{msg_name}**")
+
+                    if tool_calls:
+                        for call in tool_calls:
+                            if not call["name"].startswith("transfer_"):
+                                st.write(f"&nbsp;&nbsp;&nbsp;↳ 🛠️ `{call['name']}`")
+
