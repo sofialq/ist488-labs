@@ -231,23 +231,25 @@ if result:
             "Supervisor": "🧠"
         }
 
+        agent_tools = {
+            "research_agent": "search_destination",
+            "budget_agent": "calculate_budget",
+            "itinerary_agent": "create_schedule",
+        }
+
         lines = []
         seen = set()
         messages = result["messages"]
 
-        for i, msg in enumerate(messages):
-            st.write(f"[{i}] type={type(msg).__name__} name={getattr(msg, 'name', None)} tool_calls={getattr(msg, 'tool_calls', None)}")
-
-        for i, msg in enumerate(messages):
+        for msg in messages:
             msg_name = getattr(msg, "name", None)
 
             if msg_name in agent_emojis and msg_name not in seen:
                 seen.add(msg_name)
                 lines.append(f"{agent_emojis[msg_name]}  {msg_name}")
 
-                if i + 1 < len(messages):
-                    next_tool_calls = getattr(messages[i + 1], "tool_calls", None) or []
-                    lines += [f"   ↳ {c['name']}" for c in next_tool_calls if not c["name"].startswith("transfer_")]
+                if msg_name in agent_tools:
+                    lines.append(f"   ↳ {agent_tools[msg_name]}")
 
                 lines.append("")
 
