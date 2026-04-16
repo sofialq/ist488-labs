@@ -29,7 +29,7 @@ with open("travel_data.json", 'r') as f:
 def search_destination(query: str) -> str:
     """Search for information about a travel destination."""
 
-    for city, data in TRAVEL_DATA["destinatons"].items():
+    for city, data in TRAVEL_DATA["destinations"].items():
         if query.strip().lower() in city.lower():
             return json.dumps({
                 "destinations": city,
@@ -80,7 +80,11 @@ def create_schedule(destination: str, days: int, interests: str) -> str:
             activity_pool.extend(TRAVEL_DATA["activities"][interest])
 
     if not activity_pool:
-        activity_pool = TRAVEL_DATA["activities"]["general"]
+        activity_pool = [
+        "General city exploration",
+        "Local food tasting",
+        "Visit a popular landmark"
+    ]
 
     schedule = []
     slots = ["Morning", "Afternoon", "Evening"]
@@ -106,8 +110,7 @@ def create_schedule(destination: str, days: int, interests: str) -> str:
 
 # create agents
 research_agent = create_react_agent(
-    llm=agent_llm,
-    model='gpt-4o-mini',
+    model=agent_llm,
     tools=[search_destination],
     agent_name="Research Agent",
     prompt=("You are a travel research specialist. Your ONLY job is to look up destination information." \
@@ -118,8 +121,7 @@ research_agent = create_react_agent(
 )
 
 budget_agent = create_react_agent(
-    llm=agent_llm,
-    model='gpt-4o-mini',
+    model=agent_llm,
     tools=[calculate_budget],
     agent_name="Budget Agent",
     prompt=("You are a travel budget specialist. Your ONLY job is to calculate the budget for a trip." \
@@ -130,8 +132,7 @@ budget_agent = create_react_agent(
 )
 
 itinerary_agent = create_react_agent(
-    llm=agent_llm,
-    model='gpt-4o-mini',
+    model=agent_llm,
     tools=[create_schedule],
     agent_name="Itinerary Agent",
     prompt=("You are a travel itinerary specialist. Your ONLY job is to create a daily schedule for a trip." \
@@ -172,13 +173,15 @@ workflow = create_supervisor(
     prompt=supervisor_prompt
 )
 
+multi_agent_app = workflow.compile()
+
 # streamlit interface
 with st.sidebar:
     st.header("Trip Details")
 
     destination = st.text_input("Destination")
     duration = st.slider("Duration (days)", min_value=1, max_value=30)
-    budget_level = st.selectbox("Budget Level", options=["Low", "Medium", "High"])
+    budget_level = st.selectbox("Budget Level", options=["budget", "moderate", "luxury"])
     interests = st.multiselect("Interests", options=["Culture", "Food", "Nature", "Nightlife", "History"])
 
 if 'ma_result' not in st.session_state:
@@ -187,10 +190,12 @@ if 'ma_result' not in st.session_state:
 if 'ma_messages' not in st.session_state:
     st.session_state.ma_messages = None
 
+interest_str = ", ".join(interests)
+
 query = (
     f"Plan a {duration}-day trip to {destination}. "
     f"My budget level is {budget_level.lower()}. "
-    f"My interests include: {interests}. "
+    f"My interests include: {interest_str}. "
     f"Please provide destination research, a budget breakdown, "
     f"and a day-by-day itinerary."
 )
@@ -198,13 +203,6 @@ query = (
 st.subheader("Your Query")
 st.write(query)
 st.write(" ")
-
-multi_agent_app = workflow.compile()
-result = multi_agent_app.invoke({
-    'messages': [
-        {"role": "user", "content": query}
-    ]
-})
 
 if st.button("Plan My Trip"):
     with st.spinner("Planning your trip..."):
@@ -224,20 +222,19 @@ with st.sidebar:
     st.subheader("Agent Activity Log")
 
     agent_emojis = {
-        "Research Agent": "🔎",
-        "Budget Agent": "💰",
-        "Itinerary Agent": "🗺️",
+        "research_agent": "🔎",
+        "budget_agent": "💰",
+        "itinerary_agent": "🗺️",
         "Supervisor": "🧠"
     }
 
     result = st.session_state.ma_result
 
     if result:
+        st.write("Execution Order:")
         for msg in result["messages"]:
             msg_name = getattr(msg, 'name', None) # agent name
             tool_calls = getattr(msg, 'tool_calls', None) # tool invocations
-
-            st.write("Execution Order:")
 
             if msg_name in agent_emojis:
                 emoji = agent_emojis[msg_name]
