@@ -246,11 +246,11 @@ if result:
 
             if msg_name in agent_emojis and msg_name not in seen:
                 seen.add(msg_name)
-                lines.append(f"{agent_emojis[msg_name]}  {msg_name}")
+                lines.append(f"{agent_emojis[msg_name]}  **{msg_name}**")
 
                 if msg_name in agent_tools:
-                    lines.append(f"   ↳ {agent_tools[msg_name]}")
+                    lines.append(f"&nbsp;&nbsp;&nbsp;↳ 🛠️ `{agent_tools[msg_name]}`")
 
                 lines.append("")
 
-        st.write("\n".join(lines))
+        st.markdown("\n\n".join(lines))
