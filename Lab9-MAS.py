@@ -233,6 +233,8 @@ if result:
 
         st.write("Execution Order:")
 
+        seen = set()
+
         for msg in result["messages"]:
             msg_name = getattr(msg, "name", None)
             tool_calls = getattr(msg, "tool_calls", None)
@@ -243,6 +245,7 @@ if result:
                         continue  
 
             if msg_name in agent_emojis:
+                seen.add
                 emoji = agent_emojis[msg_name]
                 st.write(f"{emoji} **{msg_name}**")
 
