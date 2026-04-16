@@ -5,6 +5,8 @@ from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 from langgraph_supervisor import create_supervisor
+from langgraph.graph import MessagesState
+from langgraph.graph import StateGraph, START, END
 
 # Show title and description.
 st.title("Lab 9")
@@ -254,3 +256,179 @@ if result:
                 lines.append("")
 
         st.markdown("\n\n".join(lines))
+
+######## chat bot mode
+
+# define graph nodes
+def supervisor_node(state: MessagesState):
+    last_msg = state["messages"][-1]["content"].strip().lower()
+
+    if "research" in last_msg or "destination" in last_msg:
+        route = "research"
+    elif "budget" in last_msg or "cost" in last_msg or "price" in last_msg:
+        route = "budget"
+    elif "itinerary" in last_msg or "schedule" in last_msg or "activities" in last_msg:
+        route = "itinerary"
+    elif "plan" in last_msg or "trip" in last_msg:
+        route = "all"
+    else:
+        route = "chat"
+
+    return {
+        "messages": state["messages"] + [
+            {"role": "assistant", "content": route}
+        ]
+    }
+
+def research_node(state: MessagesState):
+    user_msg = state["messages"][-1]["content"]
+
+    result = research_agent.invoke({
+        "messages": [{"role": "user", "content": user_msg}]
+    })
+
+    return {
+        "messages": state["messages"] + [
+            {"role": "assistant", "content": result["messages"][-1].content}
+        ]
+    }
+
+def budget_node(state: MessagesState):
+    user_msg = state["messages"][-1]["content"]
+
+    result = budget_agent.invoke({
+        "messages": [{"role": "user", "content": user_msg}]
+    })
+
+    return {
+        "messages": state["messages"] + [
+            {"role": "assistant", "content": result["messages"][-1].content}
+        ]
+    }
+
+def itinerary_node(state: MessagesState):
+    user_msg = state["messages"][-1]["content"]
+
+    result = itinerary_agent.invoke({
+        "messages": [{"role": "user", "content": user_msg}]
+    })
+
+    return {
+        "messages": state["messages"] + [
+            {"role": "assistant", "content": result["messages"][-1].content}
+        ]
+    }
+
+def run_all_agents(state: MessagesState):
+    user_msg = state["messages"][-1]["content"]
+
+    r = research_agent.invoke({"messages": [{"role": "user", "content": user_msg}]})
+    b = budget_agent.invoke({"messages": [{"role": "user", "content": user_msg}]})
+    i = itinerary_agent.invoke({"messages": [{"role": "user", "content": user_msg}]})
+
+    combined = (
+        "Destination Research\n" + r["messages"][-1].content + "\n\n" +
+        "Budget Estimate\n" + b["messages"][-1].content + "\n\n" +
+        "Itinerary\n" + i["messages"][-1].content
+    )
+
+    return {
+        "messages": state["messages"] + [
+            {"role": "assistant", "content": combined}
+        ]
+    }
+
+def synthesizer_node(state: MessagesState):
+    all_text = "\n\n".join([m["content"] for m in state["messages"]])
+
+    final_prompt = (
+        "Combine the following agent outputs into a clean, organized final answer:\n\n"
+        + all_text
+    )
+
+    result = supervisor_llm.invoke([{"role": "user", "content": final_prompt}])
+
+    return {
+        "messages": state["messages"] + [
+            {"role": "assistant", "content": result.content}
+        ]
+    }
+
+# define router
+def route_from_supervisor(state: MessagesState):
+    last_msg = state['messages'][-1].content.strip().lower()
+    if 'research' in last_msg:
+        return 'research'
+    elif 'budget' in last_msg:
+        return 'budget'
+    elif 'itinerary' in last_msg:
+        return 'itinerary'
+    elif 'all' in last_msg:
+        return 'all'
+    else:
+        return 'chat'
+
+# build stateGraph
+chatbot_graph = StateGraph(MessagesState)
+
+# Add nodes
+chatbot_graph.add_node('supervisor', supervisor_node)
+chatbot_graph.add_node('research', research_node)
+chatbot_graph.add_node('budget', budget_node)
+chatbot_graph.add_node('itinerary', itinerary_node)
+chatbot_graph.add_node('all_agents', run_all_agents)
+chatbot_graph.add_node('synthesizer', synthesizer_node)
+
+# Edges
+chatbot_graph.add_edge(START, 'supervisor')
+chatbot_graph.add_conditional_edges(
+    'supervisor',
+    route_from_supervisor,
+    {
+        'research': 'research',
+        'budget': 'budget',
+        'itinerary': 'itinerary',
+        'all': 'all_agents',
+        'chat': 'synthesizer',
+    },
+)
+
+chatbot_graph.add_edge('research', 'synthesizer')
+chatbot_graph.add_edge('budget', 'synthesizer')
+chatbot_graph.add_edge('itinerary', 'synthesizer')
+chatbot_graph.add_edge('all_agents', 'synthesizer')
+chatbot_graph.add_edge('synthesizer', END)
+
+chatbot_app = chatbot_graph.compile()
+
+# streamlit interface
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+for msg in st.session_state.chat_history:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+st.write("---")
+st.subheader("Ask about your trip")
+
+user_input = st.chat_input(" ")
+
+if user_input:
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
+
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    with st.spinner("Thinking..."):
+        result = chatbot_app.invoke({
+            "messages": st.session_state.chat_history
+        })
+
+    final_response = result["messages"][-1].content
+
+    st.session_state.chat_history.append({"role": "assistant", "content": final_response})
+
+    with st.chat_message("assistant"):
+        st.markdown(final_response)
+
