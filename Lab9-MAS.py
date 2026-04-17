@@ -369,7 +369,7 @@ def route_from_supervisor(state: MessagesState):
     elif 'itinerary' in last_msg:
         return 'itinerary'
     elif 'all' in last_msg:
-        return 'all_agents'
+        return 'all'
     else:
         return 'chat'
 
