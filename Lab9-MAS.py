@@ -7,6 +7,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph_supervisor import create_supervisor
 from langgraph.graph import MessagesState, StateGraph, START, END
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.prompts import ChatPromptTemplate
 
 # Show title and description.
 st.title("Lab 9")
@@ -257,7 +258,17 @@ if result:
 
         st.markdown("\n\n".join(lines))
 
+'''
+attempted- too many errors 
 ######## chat bot mode
+research_prompt = ChatPromptTemplate.from_messages([
+    ("system",
+     "You are a travel research agent. Identify the destination mentioned in the user's message and provide accurate research about THAT destination only. Never default to a specific city."),
+    ("human", "{input}")
+])
+
+research_agent = research_prompt | ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
 def to_lc_message(msg):
     if isinstance(msg, (HumanMessage, AIMessage)):
         return msg
@@ -441,3 +452,4 @@ if user_input:
     with st.chat_message("assistant"):
         st.markdown(final_response)
 
+'''
