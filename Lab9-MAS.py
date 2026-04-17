@@ -368,8 +368,8 @@ def route_from_supervisor(state: MessagesState):
         return 'budget'
     elif 'itinerary' in last_msg:
         return 'itinerary'
-    elif 'all' in last_msg:
-        return 'all'
+    elif 'plan' in last_msg:
+        return 'all_agents'
     else:
         return 'chat'
 
@@ -394,7 +394,7 @@ chatbot_graph.add_conditional_edges(
         'research': 'research',
         'budget': 'budget',
         'itinerary': 'itinerary',
-        'all': 'all_agents',
+        'all_agents': 'all_agents',
         'chat': 'synthesizer',
     },
 )
