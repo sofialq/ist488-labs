@@ -255,3 +255,20 @@ if result:
 
         st.markdown("\n\n".join(lines))
 
+# experiment
+st.divider()
+st.subheader("Experiment: Single Agent vs Multi-Agent")
+st.button("Run Single Agent Comparison")
+
+trip_query = (
+    f"Plan a {duration}-day trip to {destination}. "
+    f"My budget level is {budget_level.lower()}. "
+    f"My interests include: {interest_str}. "
+    f"Please provide destination research, a budget breakdown, "
+    f"and a day-by-day itinerary."
+)
+
+single_llm = ChatOpenAI(model='gpt-4o-mini', temperature=0)
+single_result = single_llm.invoke(trip_query)
+
+st.markdown(single_result.content)
