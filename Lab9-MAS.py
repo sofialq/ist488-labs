@@ -359,7 +359,7 @@ def synthesizer_node(state: MessagesState):
 
 # define router
 def route_from_supervisor(state: MessagesState):
-    last_msg = state['messages'][-1].content.strip().lower()
+    last_msg = state['messages'][-1]['content'].strip().lower()
     if 'research' in last_msg:
         return 'research'
     elif 'budget' in last_msg:
@@ -367,7 +367,7 @@ def route_from_supervisor(state: MessagesState):
     elif 'itinerary' in last_msg:
         return 'itinerary'
     elif 'all' in last_msg:
-        return 'all'
+        return 'all_agents'
     else:
         return 'chat'
 
@@ -424,11 +424,14 @@ if user_input:
         st.markdown(user_input)
 
     with st.spinner("Thinking..."):
+
+        clean_history = [to_dict_message(m) for m in st.session_state.chat_history]
+
         result = chatbot_app.invoke({
-            "messages": st.session_state.chat_history
+            "messages": clean_history
         })
 
-    final_response = result["messages"][-1].content
+    final_response = result["messages"][-1]['content']
 
     st.session_state.chat_history.append({"role": "assistant", "content": final_response})
 
