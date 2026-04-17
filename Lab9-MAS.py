@@ -6,6 +6,7 @@ from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 from langgraph_supervisor import create_supervisor
 from langgraph.graph import MessagesState, StateGraph, START, END
+from langchain_core.messages import HumanMessage, AIMessage
 
 # Show title and description.
 st.title("Lab 9")
@@ -257,10 +258,10 @@ if result:
         st.markdown("\n\n".join(lines))
 
 ######## chat bot mode
-def to_dict_message(msg):
-    if isinstance(msg, dict):
+def to_lc_message(msg):
+    if isinstance(msg, (HumanMessage, AIMessage)):
         return msg
-    return {"role": msg.role, "content": msg.content}
+    return HumanMessage(content=msg["content"]) if msg["role"] == "user" else AIMessage(content=msg["content"])
 
 # define graph nodes
 def supervisor_node(state: MessagesState):
@@ -273,40 +274,39 @@ def supervisor_node(state: MessagesState):
     elif "itinerary" in last_msg or "schedule" in last_msg or "activities" in last_msg:
         route = "itinerary"
     elif "plan" in last_msg or "trip" in last_msg:
-        route = "all"
+        route = "all_agents"
     else:
         route = "chat"
 
     return {
         "messages": state["messages"] + [
-            {"role": "assistant", "content": route}
+            AIMessage(content=route)
         ]
-    }
+    } 
 
 def research_node(state: MessagesState):
     user_msg = state["messages"][-1].content
 
     result = research_agent.invoke({
-        "messages": [{"role": "user", "content": user_msg}]
+        "messages": [HumanMessage(content=user_msg)]
     })
 
     return {
         "messages": state["messages"] + [
-            {"role": "assistant", "content": result["messages"][-1].content}
+            AIMessage(content=result["messages"][-1].content)
         ]
     }
 
 def budget_node(state: MessagesState):
     user_msg = state["messages"][-1].content
 
-
     result = budget_agent.invoke({
-        "messages": [{"role": "user", "content": user_msg}]
+        "messages": [HumanMessage(content=user_msg)]
     })
 
     return {
         "messages": state["messages"] + [
-            {"role": "assistant", "content": result["messages"][-1].content}
+            AIMessage(content=result["messages"][-1].content)
         ]
     }
 
@@ -314,21 +314,21 @@ def itinerary_node(state: MessagesState):
     user_msg = state["messages"][-1].content
 
     result = itinerary_agent.invoke({
-        "messages": [{"role": "user", "content": user_msg}]
+        "messages": [HumanMessage(content=user_msg)]
     })
 
     return {
         "messages": state["messages"] + [
-            {"role": "assistant", "content": result["messages"][-1].content}
+            AIMessage(content=result["messages"][-1].content)
         ]
     }
 
 def run_all_agents(state: MessagesState):
     user_msg = state["messages"][-1].content
 
-    r = research_agent.invoke({"messages": [{"role": "user", "content": user_msg}]})
-    b = budget_agent.invoke({"messages": [{"role": "user", "content": user_msg}]})
-    i = itinerary_agent.invoke({"messages": [{"role": "user", "content": user_msg}]})
+    r = research_agent.invoke({"messages": [HumanMessage(content=user_msg)]})
+    b = budget_agent.invoke({"messages": [HumanMessage(content=user_msg)]})
+    i = itinerary_agent.invoke({"messages": [HumanMessage(content=user_msg)]})
 
     combined = (
         "Destination Research\n" + r["messages"][-1].content + "\n\n" +
@@ -338,7 +338,7 @@ def run_all_agents(state: MessagesState):
 
     return {
         "messages": state["messages"] + [
-            {"role": "assistant", "content": combined}
+            AIMessage(content=combined)
         ]
     }
 
@@ -350,11 +350,11 @@ def synthesizer_node(state: MessagesState):
         + all_text
     )
 
-    result = supervisor_llm.invoke([{"role": "user", "content": final_prompt}])
+    result = supervisor_llm.invoke([HumanMessage(content=final_prompt)])
 
     return {
         "messages": state["messages"] + [
-            {"role": "assistant", "content": result.content}
+            AIMessage(content=result.content)
         ]
     }
 
@@ -386,6 +386,7 @@ chatbot_graph.add_node('synthesizer', synthesizer_node)
 
 # Edges
 chatbot_graph.add_edge(START, 'supervisor')
+
 chatbot_graph.add_conditional_edges(
     'supervisor',
     route_from_supervisor,
@@ -427,13 +428,13 @@ if user_input:
 
     with st.spinner("Thinking..."):
 
-        clean_history = [to_dict_message(m) for m in st.session_state.chat_history]
+        lc_history = [to_lc_message(m) for m in st.session_state.chat_history]
 
         result = chatbot_app.invoke({
-            "messages": clean_history
+            "messages": lc_history
         })
 
-    final_response = result["messages"][-1]['content']
+    final_response = result["messages"][-1].content
 
     st.session_state.chat_history.append({"role": "assistant", "content": final_response})
 
