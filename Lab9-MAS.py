@@ -5,8 +5,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 from langgraph_supervisor import create_supervisor
-from langgraph.graph import MessagesState
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import MessagesState, StateGraph, START, END
 
 # Show title and description.
 st.title("Lab 9")
@@ -258,6 +257,10 @@ if result:
         st.markdown("\n\n".join(lines))
 
 ######## chat bot mode
+def to_dict_message(msg):
+    if isinstance(msg, dict):
+        return msg
+    return {"role": msg.role, "content": msg.content}
 
 # define graph nodes
 def supervisor_node(state: MessagesState):
