@@ -264,7 +264,7 @@ def to_dict_message(msg):
 
 # define graph nodes
 def supervisor_node(state: MessagesState):
-    last_msg = state["messages"][-1]["content"].strip().lower()
+    last_msg = state["messages"][-1].content.strip().lower()
 
     if "research" in last_msg or "destination" in last_msg:
         route = "research"
@@ -284,7 +284,7 @@ def supervisor_node(state: MessagesState):
     }
 
 def research_node(state: MessagesState):
-    user_msg = state["messages"][-1]["content"]
+    user_msg = state["messages"][-1].content
 
     result = research_agent.invoke({
         "messages": [{"role": "user", "content": user_msg}]
@@ -297,7 +297,8 @@ def research_node(state: MessagesState):
     }
 
 def budget_node(state: MessagesState):
-    user_msg = state["messages"][-1]["content"]
+    user_msg = state["messages"][-1].content
+
 
     result = budget_agent.invoke({
         "messages": [{"role": "user", "content": user_msg}]
@@ -310,7 +311,7 @@ def budget_node(state: MessagesState):
     }
 
 def itinerary_node(state: MessagesState):
-    user_msg = state["messages"][-1]["content"]
+    user_msg = state["messages"][-1].content
 
     result = itinerary_agent.invoke({
         "messages": [{"role": "user", "content": user_msg}]
@@ -323,7 +324,7 @@ def itinerary_node(state: MessagesState):
     }
 
 def run_all_agents(state: MessagesState):
-    user_msg = state["messages"][-1]["content"]
+    user_msg = state["messages"][-1].content
 
     r = research_agent.invoke({"messages": [{"role": "user", "content": user_msg}]})
     b = budget_agent.invoke({"messages": [{"role": "user", "content": user_msg}]})
@@ -342,7 +343,7 @@ def run_all_agents(state: MessagesState):
     }
 
 def synthesizer_node(state: MessagesState):
-    all_text = "\n\n".join([m["content"] for m in state["messages"]])
+    all_text = "\n\n".join([m.content for m in state["messages"]])
 
     final_prompt = (
         "Combine the following agent outputs into a clean, organized final answer:\n\n"
@@ -359,7 +360,8 @@ def synthesizer_node(state: MessagesState):
 
 # define router
 def route_from_supervisor(state: MessagesState):
-    last_msg = state['messages'][-1]['content'].strip().lower()
+    last_msg = state["messages"][-1].content.strip().lower()
+
     if 'research' in last_msg:
         return 'research'
     elif 'budget' in last_msg:
