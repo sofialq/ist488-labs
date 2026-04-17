@@ -13,3 +13,4 @@ langchain-supervisor
 langgraph
 pydantic
 ollama
+langcha
