@@ -330,9 +330,9 @@ def run_all_agents(state: MessagesState):
     i = itinerary_agent.invoke({"messages": [{"role": "user", "content": user_msg}]})
 
     combined = (
-        "Destination Research\n" + r["messages"][-1]['content'] + "\n\n" +
-        "Budget Estimate\n" + b["messages"][-1]['content'] + "\n\n" +
-        "Itinerary\n" + i["messages"][-1]['content']
+        "Destination Research\n" + r["messages"][-1].content + "\n\n" +
+        "Budget Estimate\n" + b["messages"][-1].content + "\n\n" +
+        "Itinerary\n" + i["messages"][-1].content
     )
 
     return {
